@@ -63,11 +63,18 @@ config["test_split"] = os.path.join(root_path, "dataset/test_obs/data")
 
 # Preprocessed Dataset
 config["preprocess"] = True # whether use preprocess or not
+
+# config["preprocess_train"] = os.path.join(
+#     root_path, "dataset","preprocess", "train_crs_dist6_angle90.p"
+# )
 config["preprocess_train"] = os.path.join(
-    root_path, "dataset","preprocess", "train_crs_dist6_angle90.p"
+    root_path, "dataset","preprocess", "interaction_val.p"
 )
+# config["preprocess_val"] = os.path.join(
+#     root_path,"dataset", "preprocess", "val_crs_dist6_angle90.p"
+# )
 config["preprocess_val"] = os.path.join(
-    root_path,"dataset", "preprocess", "val_crs_dist6_angle90.p"
+    root_path,"dataset", "preprocess", "interaction_val.p"
 )
 config['preprocess_test'] = os.path.join(root_path, "dataset",'preprocess', 'test_test.p')
 
@@ -131,7 +138,7 @@ class Net(nn.Module):
         actors = self.actor_net(actors)
 
         # construct map features
-        graph = graph_gather(to_long(gpu(data["graph"])))
+        graph = graph_gather(to_long(gpu(data["graph"])), config)
         nodes, node_idcs, node_ctrs = self.map_net(graph)
 
         # actor-map fusion cycle 
@@ -168,7 +175,7 @@ def actor_gather(actors: List[Tensor]) -> Tuple[Tensor, List[Tensor]]:
     return actors, actor_idcs
 
 
-def graph_gather(graphs):
+def graph_gather(graphs, graph):
     batch_size = len(graphs)
     node_idcs = []
     count = 0
@@ -185,12 +192,18 @@ def graph_gather(graphs):
     graph["idcs"] = node_idcs
     graph["ctrs"] = [x["ctrs"] for x in graphs]
 
-    for key in ["feats", "turn", "control", "intersect"]:
+    '''
+    get rid of the control, intersect, and turn features, as the osm map
+    does not have them.
+    '''
+    for key in ["feats"]:
         graph[key] = torch.cat([x[key] for x in graphs], 0)
+    # for key in ["feats", "turn", "control", "intersect"]:
+    #     graph[key] = torch.cat([x[key] for x in graphs], 0)
 
     for k1 in ["pre", "suc"]:
         graph[k1] = []
-        for i in range(len(graphs[0]["pre"])):
+        for i in range(min(len(graphs[0]["pre"]), config["num_scales"])):
             graph[k1].append(dict())
             for k2 in ["u", "v"]:
                 graph[k1][i][k2] = torch.cat(
@@ -383,16 +396,16 @@ class A2M(nn.Module):
         self.att = nn.ModuleList(att)
 
     def forward(self, feat: Tensor, graph: Dict[str, Union[List[Tensor], Tensor, List[Dict[str, Tensor]], Dict[str, Tensor]]], actors: Tensor, actor_idcs: List[Tensor], actor_ctrs: List[Tensor]) -> Tensor:
-        """meta, static and dyn fuse using attention"""
-        meta = torch.cat(
-            (
-                graph["turn"],
-                graph["control"].unsqueeze(1),
-                graph["intersect"].unsqueeze(1),
-            ),
-            1,
-        )
-        feat = self.meta(torch.cat((feat, meta), 1))
+        # """meta, static and dyn fuse using attention"""
+        # meta = torch.cat(
+        #     (
+        #         graph["turn"],
+        #         graph["control"].unsqueeze(1),
+        #         graph["intersect"].unsqueeze(1),
+        #     ),
+        #     1,
+        # )
+        # feat = self.meta(torch.cat((feat, meta), 1))
 
         for i in range(len(self.att)):
             feat = self.att[i](
@@ -801,7 +814,7 @@ class PredLoss(nn.Module):
         reg = reg[row_idcs, min_idcs]
         coef = self.config["reg_coef"]
         loss_out["reg_loss"] += coef * self.reg_loss(
-            reg[has_preds], gt_preds[has_preds]
+            reg[has_preds.long()], gt_preds[has_preds.long()]
         )
         loss_out["num_reg"] += has_preds.sum().item()
         return loss_out
@@ -881,7 +894,7 @@ class PostProcess(nn.Module):
 
 
 def pred_metrics(preds, gt_preds, has_preds):
-    assert has_preds.all()
+    # assert has_preds.all()
     preds = np.asarray(preds, np.float32)
     gt_preds = np.asarray(gt_preds, np.float32)
 

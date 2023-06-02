@@ -52,6 +52,7 @@ parser.add_argument(
 
 
 def main():
+    print(root_path)
     seed = hvd.rank()
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
@@ -129,7 +130,8 @@ def main():
         worker_init_fn=worker_init_fn,
         drop_last=True,
     )
-
+    print("Data loader for training done.")
+    
     # Data loader for evaluation
     dataset = Dataset(config["val_split"], config, train=False)
     val_sampler = DistributedSampler(dataset, num_replicas=hvd.size(), rank=hvd.rank())
@@ -141,11 +143,14 @@ def main():
         collate_fn=collate_fn,
         pin_memory=True,
     )
+    print("Data loader for evaluation done.")
+
 
     hvd.broadcast_parameters(net.state_dict(), root_rank=0)
     hvd.broadcast_optimizer_state(opt.opt, root_rank=0)
 
     epoch = config["epoch"]
+    print("epoch number: " +str(epoch))
     remaining_epochs = int(np.ceil(config["num_epochs"] - epoch))
     for i in range(remaining_epochs):
         train(epoch + i, config, train_loader, net, loss, post_process, opt, val_loader)
