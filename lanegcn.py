@@ -389,16 +389,16 @@ class A2M(nn.Module):
         self.att = nn.ModuleList(att)
 
     def forward(self, feat: Tensor, graph: Dict[str, Union[List[Tensor], Tensor, List[Dict[str, Tensor]], Dict[str, Tensor]]], actors: Tensor, actor_idcs: List[Tensor], actor_ctrs: List[Tensor]) -> Tensor:
-        """meta, static and dyn fuse using attention"""
-        meta = torch.cat(
-            (
-                graph["turn"],
-                graph["control"].unsqueeze(1),
-                graph["intersect"].unsqueeze(1),
-            ),
-            1,
-        )
-        feat = self.meta(torch.cat((feat, meta), 1))
+        # """meta, static and dyn fuse using attention"""
+        # meta = torch.cat(
+        #     (
+        #         graph["turn"],
+        #         graph["control"].unsqueeze(1),
+        #         graph["intersect"].unsqueeze(1),
+        #     ),
+        #     1,
+        # )
+        # feat = self.meta(torch.cat((feat, meta), 1))
 
         for i in range(len(self.att)):
             feat = self.att[i](
