@@ -220,9 +220,9 @@ class ActorNet(nn.Module):
         ng = 1
 
         n_in = 3
-        n_out = [32, 64, 128]
-        blocks = [Res1d, Res1d, Res1d]
-        num_blocks = [2, 2, 2]
+        n_out = [32, 64]
+        blocks = [Res1d, Res1d]
+        num_blocks = [2, 2]
 
         groups = []
         for i in range(len(num_blocks)):
