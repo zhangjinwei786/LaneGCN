@@ -185,8 +185,14 @@ def graph_gather(graphs):
     graph["idcs"] = node_idcs
     graph["ctrs"] = [x["ctrs"] for x in graphs]
 
-    for key in ["feats", "turn", "control", "intersect"]:
+    '''
+    get rid of the control, intersect, and turn features, as the osm map
+    does not have them.
+    '''
+    for key in ["feats"]:
         graph[key] = torch.cat([x[key] for x in graphs], 0)
+    # for key in ["feats", "turn", "control", "intersect"]:
+    #     graph[key] = torch.cat([x[key] for x in graphs], 0)
 
     for k1 in ["pre", "suc"]:
         graph[k1] = []
