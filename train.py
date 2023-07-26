@@ -14,6 +14,7 @@ import random
 import sys
 import time
 import shutil
+import pickle
 from importlib import import_module
 from numbers import Number
 
@@ -170,6 +171,8 @@ def train(epoch, config, train_loader, net, loss, post_process, opt, val_loader=
     )
     val_iters = int(config["val_iters"] / (hvd.size() * config["batch_size"]))
 
+    loss_output_list = []
+
     start_time = time.time()
     metrics = dict()
     for i, data in tqdm(enumerate(train_loader),disable=hvd.rank()):
@@ -178,6 +181,7 @@ def train(epoch, config, train_loader, net, loss, post_process, opt, val_loader=
 
         output = net(data)
         loss_out = loss(output, data)
+        loss_output_list.append(loss_out)
         post_out = post_process(output, data)
         post_process.append(metrics, loss_out, post_out)
 
@@ -205,6 +209,10 @@ def train(epoch, config, train_loader, net, loss, post_process, opt, val_loader=
         if epoch >= config["num_epochs"]:
             val(config, val_loader, net, loss, post_process, epoch)
             return
+
+# record the loss output in each step and save it to a pickle file
+    with open('loss_output_list_'+str(int(epoch))+'.p', 'wb') as handle:
+        pickle.dump(loss_output_list, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def val(config, data_loader, net, loss, post_process, epoch):

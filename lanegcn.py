@@ -810,7 +810,17 @@ class PredLoss(nn.Module):
             reg[has_preds], gt_preds[has_preds]
         )
         loss_out["num_reg"] += has_preds.sum().item()
+        loss_out["min_idcs"] = self.get_dist(min_idcs.cpu().numpy())
         return loss_out
+
+    def get_dist(self, input_list):
+        out = {}
+        for h in input_list:
+            if h in out:
+                out[h] = out[h] + 1
+            else:
+                out[h] = 1
+        return out
 
 
 class Loss(nn.Module):
@@ -849,7 +859,7 @@ class PostProcess(nn.Module):
                 metrics[key] = []
 
         for key in loss_out:
-            if key == "loss":
+            if key == "loss" or "min_idcs":
                 continue
             if isinstance(loss_out[key], torch.Tensor):
                 metrics[key] += loss_out[key].item()
