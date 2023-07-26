@@ -64,7 +64,7 @@ config["test_split"] = os.path.join(root_path, "dataset/test_obs/data")
 # Preprocessed Dataset
 config["preprocess"] = True # whether use preprocess or not
 config["preprocess_train"] = os.path.join(
-    root_path, "dataset","preprocess", "interaction_train_val", "train.p"
+    root_path, "dataset","preprocess", "interaction_train_val", "val.p" # FIXME: change to train.p
 )
 config["preprocess_val"] = os.path.join(
     root_path,"dataset", "preprocess", "interaction_train_val", "val.p"

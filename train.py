@@ -169,7 +169,7 @@ def train(epoch, config, train_loader, net, loss, post_process, opt, val_loader=
     display_iters = int(
         config["display_iters"] / (hvd.size() * config["batch_size"])
     )
-    val_iters = int(config["val_iters"] / (hvd.size() * config["batch_size"]))
+    val_iters = 1 # int(config["val_iters"] / (hvd.size() * config["batch_size"]))
 
     loss_output_list = []
 
