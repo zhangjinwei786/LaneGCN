@@ -64,7 +64,7 @@ config["test_split"] = os.path.join(root_path, "dataset/test_obs/data")
 # Preprocessed Dataset
 config["preprocess"] = True # whether use preprocess or not
 config["preprocess_train"] = os.path.join(
-    root_path, "dataset","preprocess", "interaction_train_val", "val.p" # FIXME: change to train.p
+    root_path, "dataset","preprocess", "interaction_train_val", "train.p"
 )
 config["preprocess_val"] = os.path.join(
     root_path,"dataset", "preprocess", "interaction_train_val", "val.p"
@@ -852,14 +852,14 @@ class PostProcess(nn.Module):
     def append(self, metrics: Dict, loss_out: Dict, post_out: Optional[Dict[str, List[ndarray]]]=None) -> Dict:
         if len(metrics.keys()) == 0:
             for key in loss_out:
-                if key != "loss":
+                if (key != "loss") and (key != "min_idcs"):
                     metrics[key] = 0.0
 
             for key in post_out:
                 metrics[key] = []
 
         for key in loss_out:
-            if key == "loss" or "min_idcs":
+            if (key == "loss") or (key == "min_idcs"):
                 continue
             if isinstance(loss_out[key], torch.Tensor):
                 metrics[key] += loss_out[key].item()
